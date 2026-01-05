@@ -1,4 +1,10 @@
 ---
+- name: Fetch Artifactory credentials from Vault
+  set_fact:
+    artifactory_user: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=secret/data/artifactory/duas:username token={{ vault_token }} url={{ vault_addr }}') }}"
+    artifactory_password: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=secret/data/artifactory/duas:password token={{ vault_token }} url={{ vault_addr }}') }}"
+  no_log: true
+
 - name: Create installer directory
   file:
     path: "{{ duas_installer_path }}"

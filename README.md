@@ -32,13 +32,12 @@ This project automates:
 
 In GitLab project: **Settings → CI/CD → Variables**
 
-| Variable          | Value                     | Type         |
-| ----------------- | ------------------------- | ------------ |
-| `VAULT_ADDR`      | https://vault.example.com | Variable     |
-| `SSH_PRIVATE_KEY` | Your SSH private key      | File, Masked |
-| `TARGET_HOST`     | target-server.example.com | Variable     |
+| Variable      | Value                     | Type     |
+| ------------- | ------------------------- | -------- |
+| `VAULT_ADDR`  | https://vault.example.com | Variable |
+| `TARGET_HOST` | target-server.example.com | Variable |
 
-**Note**: Artifactory credentials are already stored in Vault at `secret/artifactory/duas` and will be fetched automatically by the pipeline.
+**Note**: All credentials (Artifactory credentials and SSH private key) are stored in Vault and will be fetched automatically by Ansible using the `community.hashi_vault` collection.
 
 ### 2. Update Configuration
 
@@ -69,6 +68,35 @@ git push origin main
 ```
 
 In GitLab: **CI/CD → Pipelines** → Click play button on `deploy_duas`
+
+## Vault Secrets Structure
+
+The following secrets must be stored in Vault:
+
+**Artifactory credentials** (`secret/artifactory/duas`):
+
+```json
+{
+  "username": "artifactory-user",
+  "password": "artifactory-password",
+  "url": "https://your-artifactory.jfrog.io/artifactory",
+  "repository": "duas-installers"
+}
+```
+
+**SSH private key** (`secret/ssh/duas`):
+
+```json
+{
+  "private_key": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+}
+```
+
+**Note**: Ansible uses the `community.hashi_vault` collection to fetch these secrets. Install it with:
+
+```bash
+ansible-galaxy collection install community.hashi_vault
+```
 
 ## Project Structure
 
