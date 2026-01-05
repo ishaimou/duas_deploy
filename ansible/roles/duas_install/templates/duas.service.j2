@@ -1,0 +1,24 @@
+[Unit]
+Description=Dollar Universe Application Server v6.10 for {{ duas_company }}/{{ duas_node }}
+Documentation=https://techdocs.broadcom.com/
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User={{ duas_user }}
+Group={{ duas_group }}
+Environment="UNI_DIR_EXEC={{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}"
+WorkingDirectory={{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}
+ExecStartPre=/bin/sleep 5
+ExecStart=/bin/ksh -c 'source {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/unienv.ksh && {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt start'
+ExecStop=/bin/ksh -c 'source {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/unienv.ksh && {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt stop'
+ExecReload=/bin/ksh -c 'source {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/unienv.ksh && {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt restart'
+RemainAfterExit=yes
+TimeoutStartSec=300
+TimeoutStopSec=300
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

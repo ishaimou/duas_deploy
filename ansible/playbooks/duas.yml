@@ -1,0 +1,6 @@
+---
+- name: Deploy Dollar Universe Application Server 6.10
+  hosts: duas_servers
+  become: yes
+  roles:
+    - duas_install

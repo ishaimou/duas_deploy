@@ -1,0 +1,10 @@
+---
+# tasks file for duas_install
+- name: Include OS prerequisites tasks
+  include_tasks: prerequisites.yml
+
+- name: Include DUAS installation tasks
+  include_tasks: install.yml
+
+- name: Include DUAS configuration tasks
+  include_tasks: configure.yml

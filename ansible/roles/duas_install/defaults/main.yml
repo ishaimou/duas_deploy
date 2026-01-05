@@ -1,0 +1,29 @@
+---
+# DUAS Version and Installer
+duas_version: "6.10.01"
+duas_installer_archive: "Dollar.Universe_Application.Server_linux.64_6_10_111+build.0039.tar.gz"
+duas_installer_path: "/tmp/duas_installer"
+
+# Artifactory Details (credentials passed from GitLab CI via Vault)
+artifactory_url: "https://your-artifactory.jfrog.io/artifactory"
+artifactory_repo: "duas-installers"
+artifactory_user: ""
+artifactory_password: ""
+
+# DUAS Installation Details (per official docs)
+duas_company: "MYCOMPANY"
+duas_node: "NODE01"
+duas_area: "APP" # APP, INT, or SIM
+duas_install_dir: "/var/opt/AUTOMIC/DUAS" # Official default path
+duas_user: "duas"
+duas_group: "duas"
+
+# UVMS Registration
+uvms_hostname: "uvms-server.example.com"
+uvms_port: "4184" # Default UVMS port
+
+# System Prerequisites (per official Broadcom docs)
+required_packages:
+  - ksh
+  - glibc.i686 # 32-bit compatibility on 64-bit OS
+  - libnsl

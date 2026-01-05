@@ -1,0 +1,53 @@
+# Dollar Universe Silent Installation Response File
+# CLUSTERTYPE : Cluster configuration
+ CLUSTERTYPE no
+# BINSHARING : Binary sharing between instances
+ BINSHARING n
+# UVMSNOW : Register to UVMS now
+ UVMSNOW y
+# CENTRALHOST : UVMS hostname
+ CENTRALHOST {{ uvms_hostname }}
+# CENTRALPORT : UVMS port
+ CENTRALPORT {{ uvms_port }}
+# CENTRALLOGIN : UVMS admin login
+ CENTRALLOGIN admin
+# CENTRALPASSWD : UVMS admin password (leave blank for manual registration)
+ CENTRALPASSWD
+# COMPANY : Company name
+ COMPANY {{ duas_company }}
+# NODE : Node name
+ NODE {{ duas_node }}
+# NODETAG : Node tags
+ NODETAG
+# NODEHOST : Node hostname
+ NODEHOST {{ ansible_hostname }}
+# INSTALLDIR : Installation directory
+ INSTALLDIR {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}
+# AREA_A : Configure Application area
+ AREA_A {% if duas_area == 'APP' %}y{% else %}n{% endif %}
+# AREA_I : Configure Integration area
+ AREA_I {% if duas_area == 'INT' %}y{% else %}n{% endif %}
+# AREA_S : Configure Simulation area
+ AREA_S n
+# INSTALL_SAP : Manager for SAP (k=keep, r=remove, a=activate)
+ INSTALL_SAP k
+# CONFIG_SAP : SAP config path
+ CONFIG_SAP
+# INSTALL_OAPP : Manager for Oracle Applications
+ INSTALL_OAPP k
+# CONFIG_OAPP : Oracle Apps config path
+ CONFIG_OAPP
+# INSTALL_JAVA : Manager for Java
+ INSTALL_JAVA k
+# JAVA_PATH : Java path
+ JAVA_PATH
+# PORTDEF : Use default ports
+ PORTDEF y
+# PORT : TCP port base number
+ PORT 4100
+# ADMUSER : Administrator user
+ ADMUSER {{ duas_user }}
+# EXECPATH : Binaries directory path
+ EXECPATH default_value
+# LOGPATH : Log directory path
+ LOGPATH default_value

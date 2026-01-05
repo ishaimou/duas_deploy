@@ -1,0 +1,39 @@
+---
+- name: Wait for DUAS installation to complete
+  wait_for:
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+    timeout: 300
+
+- name: Check if UVMS registration is needed
+  stat:
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/data/uvms_registered"
+  register: uvms_check
+
+- name: Register DUAS with UVMS (if not done during install)
+  shell: |
+    source {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/unienv.ksh
+    {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unisetup -register \
+      -uvms {{ uvms_hostname }} \
+      -port {{ uvms_port }} \
+      -company {{ duas_company }} \
+      -node {{ duas_node }}
+    touch {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/data/uvms_registered
+  args:
+    executable: /bin/ksh
+  become_user: "{{ duas_user }}"
+  when: not uvms_check.stat.exists
+  ignore_errors: yes
+
+- name: Create systemd service file
+  template:
+    src: duas.service.j2
+    dest: "/etc/systemd/system/duas_{{ duas_company }}.service"
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Enable and start DUAS service
+  systemd:
+    name: "duas_{{ duas_company }}.service"
+    enabled: yes
+    state: started
+    daemon_reload: yes

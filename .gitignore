@@ -1,0 +1,58 @@
+# Ansible
+*.retry
+.vault_pass
+*.log
+/tmp/
+ansible_facts/
+
+# SSH Keys
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Vault
+.vault_token
+
+# Secrets
+*secret*
+*password*
+credentials.yml
+
+# Temporary files
+/tmp/
+*.tmp
+*.bak
+
+# Artifactory downloads
+*.tar.gz
+*.zip
+!ansible/roles/*/files/*.tar.gz
+
+# Environment
+.env
+env_vars_local.sh

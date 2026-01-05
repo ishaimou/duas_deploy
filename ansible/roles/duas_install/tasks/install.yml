@@ -1,0 +1,54 @@
+---
+- name: Create installer directory
+  file:
+    path: "{{ duas_installer_path }}"
+    state: directory
+    mode: "0755"
+
+- name: Download DUAS installer from Artifactory
+  get_url:
+    url: "{{ artifactory_url }}/{{ artifactory_repo }}/{{ duas_installer_archive }}"
+    dest: "{{ duas_installer_path }}/{{ duas_installer_archive }}"
+    url_username: "{{ artifactory_user }}"
+    url_password: "{{ artifactory_password }}"
+    force_basic_auth: yes
+    mode: "0644"
+  no_log: true
+
+- name: Extract installer
+  unarchive:
+    src: "{{ duas_installer_path }}/{{ duas_installer_archive }}"
+    dest: "{{ duas_installer_path }}"
+    remote_src: yes
+
+- name: Find unirun installer
+  find:
+    paths: "{{ duas_installer_path }}"
+    patterns: "unirun"
+    recurse: yes
+  register: unirun_script
+
+- name: Create silent installation response file
+  template:
+    src: install.file.j2
+    dest: "{{ duas_installer_path }}/install.file"
+    mode: "0644"
+
+- name: Run DUAS silent installation
+  shell: |
+    cd {{ unirun_script.files[0].path | dirname }}
+    ./unirun -i -s -f {{ duas_installer_path }}/install.file
+  args:
+    creates: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+
+- name: Set correct ownership
+  file:
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}"
+    owner: "{{ duas_user }}"
+    group: "{{ duas_group }}"
+    recurse: yes
+
+- name: Clean up installer files
+  file:
+    path: "{{ duas_installer_path }}"
+    state: absent
