@@ -1,0 +1,111 @@
+---
+# Rollback tasks for DUAS installation
+
+- name: Check if DUAS installation exists
+  stat:
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}"
+  register: duas_installation
+
+- name: Rollback block
+  when: duas_installation.stat.exists
+  block:
+    - name: Stop DUAS service
+      systemd:
+        name: "duas_{{ duas_company }}.service"
+        state: stopped
+      ignore_errors: yes
+      register: service_stopped
+
+    - name: Disable DUAS service
+      systemd:
+        name: "duas_{{ duas_company }}.service"
+        enabled: no
+      ignore_errors: yes
+      when: service_stopped is succeeded
+
+    - name: Remove systemd service file
+      file:
+        path: "/etc/systemd/system/duas_{{ duas_company }}.service"
+        state: absent
+      register: service_removed
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+      when: service_removed is changed
+
+    - name: Unregister DUAS from UVMS
+      shell: |
+        source {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/unienv.ksh
+        {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unisetup -unregister \
+          -uvms {{ uvms_hostname }} \
+          -port {{ uvms_port }} \
+          -company {{ duas_company }} \
+          -node {{ duas_node }}
+      args:
+        executable: /bin/ksh
+      become_user: "{{ duas_user }}"
+      ignore_errors: yes
+      register: unregister_result
+      changed_when: unregister_result.rc == 0
+
+    - name: Create backup of DUAS installation
+      archive:
+        path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}"
+        dest: "{{ rollback_backup_dir }}/duas_{{ duas_company }}_backup.tar.gz"
+        format: gz
+      when: rollback_backup_data | bool
+      ignore_errors: yes
+
+    - name: Remove DUAS installation directory
+      file:
+        path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}"
+        state: absent
+      register: installation_removed
+
+    - name: Remove parent DUAS directory if empty
+      file:
+        path: "{{ duas_install_dir }}"
+        state: absent
+      when: installation_removed is changed
+      ignore_errors: yes
+
+    - name: Remove UVMS registration marker
+      file:
+        path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/data/uvms_registered"
+        state: absent
+      ignore_errors: yes
+
+- name: Remove DUAS user
+  user:
+    name: "{{ duas_user }}"
+    state: absent
+    remove: yes
+  when: rollback_remove_user | bool
+  ignore_errors: yes
+
+- name: Remove DUAS group
+  group:
+    name: "{{ duas_group }}"
+    state: absent
+  when: rollback_remove_group | bool
+  ignore_errors: yes
+
+- name: Remove installed packages
+  yum:
+    name:
+      - ksh
+      - glibc.i686
+      - libnsl
+    state: absent
+  when: rollback_remove_packages | bool
+  ignore_errors: yes
+
+- name: Display rollback summary
+  debug:
+    msg:
+      - "DUAS Rollback completed"
+      - "Installation removed: {{ installation_removed.changed | default(false) }}"
+      - "Service removed: {{ service_removed.changed | default(false) }}"
+      - "User removed: {{ rollback_remove_user }}"
+      - "Backup location: {{ rollback_backup_dir if rollback_backup_data else 'No backup created' }}"

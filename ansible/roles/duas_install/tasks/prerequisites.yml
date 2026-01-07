@@ -25,3 +25,27 @@
     owner: "{{ duas_user }}"
     group: "{{ duas_group }}"
     mode: "0755"
+
+- name: Install iptables-services package
+  yum:
+    name: iptables-services
+    state: present
+
+- name: Configure iptables rules for UVMS communication
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: "{{ item }}"
+    ctstate: NEW
+    jump: ACCEPT
+    action: insert
+    rule_num: 1
+    comment: "Dollar Universe UVMS communication"
+  loop:
+    - 10800
+    - 10805
+    - 10811
+    - 10815
+    - 10804
+    - 10818
+  notify: Save iptables rules

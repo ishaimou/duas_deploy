@@ -1,15 +1,20 @@
 ---
-- name: Wait for DUAS installation to complete
-  wait_for:
+- name: Check if DUAS installation exists
+  stat:
     path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
-    timeout: 300
+  register: duas_binary
 
-- name: Check if UVMS registration is needed
+- name: Fail if DUAS is not installed
+  fail:
+    msg: "DUAS installation not found at {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+  when: not duas_binary.stat.exists
+
+- name: Check if UVMS registration marker exists
   stat:
     path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/data/uvms_registered"
-  register: uvms_check
+  register: uvms_marker
 
-- name: Register DUAS with UVMS (if not done during install)
+- name: Register DUAS with UVMS
   shell: |
     source {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/unienv.ksh
     {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unisetup -register \
@@ -17,12 +22,22 @@
       -port {{ uvms_port }} \
       -company {{ duas_company }} \
       -node {{ duas_node }}
-    touch {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/data/uvms_registered
   args:
     executable: /bin/ksh
   become_user: "{{ duas_user }}"
-  when: not uvms_check.stat.exists
-  ignore_errors: yes
+  when: not uvms_marker.stat.exists
+  register: uvms_registration
+  changed_when: uvms_registration.rc == 0
+  failed_when: false
+
+- name: Create UVMS registration marker
+  file:
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/data/uvms_registered"
+    state: touch
+    owner: "{{ duas_user }}"
+    group: "{{ duas_group }}"
+    mode: "0644"
+  when: uvms_registration is defined and uvms_registration.rc == 0
 
 - name: Create systemd service file
   template:
@@ -30,10 +45,21 @@
     dest: "/etc/systemd/system/duas_{{ duas_company }}.service"
     mode: "0644"
   notify: Reload systemd
+  register: service_file
 
-- name: Enable and start DUAS service
+- name: Reload systemd if service file changed
+  systemd:
+    daemon_reload: yes
+  when: service_file is changed
+
+- name: Enable DUAS service
   systemd:
     name: "duas_{{ duas_company }}.service"
     enabled: yes
+
+- name: Start DUAS service if not running
+  systemd:
+    name: "duas_{{ duas_company }}.service"
     state: started
-    daemon_reload: yes
+  register: service_start
+  changed_when: service_start.changed

@@ -5,56 +5,70 @@
     artifactory_password: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=secret/data/artifactory/duas:password token={{ vault_token }} url={{ vault_addr }}') }}"
   no_log: true
 
-- name: Create installer directory
-  file:
-    path: "{{ duas_installer_path }}"
-    state: directory
-    mode: "0755"
+- name: Check if DUAS is already installed
+  stat:
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+  register: duas_installed
 
-- name: Download DUAS installer from Artifactory
-  get_url:
-    url: "{{ artifactory_url }}/{{ artifactory_repo }}/{{ duas_installer_archive }}"
-    dest: "{{ duas_installer_path }}/{{ duas_installer_archive }}"
-    url_username: "{{ artifactory_user }}"
-    url_password: "{{ artifactory_password }}"
-    force_basic_auth: yes
-    mode: "0644"
-  no_log: true
+- name: DUAS installation tasks
+  when: not duas_installed.stat.exists
+  block:
+    - name: Create installer directory
+      file:
+        path: "{{ duas_installer_path }}"
+        state: directory
+        mode: "0755"
 
-- name: Extract installer
-  unarchive:
-    src: "{{ duas_installer_path }}/{{ duas_installer_archive }}"
-    dest: "{{ duas_installer_path }}"
-    remote_src: yes
+    - name: Download DUAS installer from Artifactory
+      get_url:
+        url: "{{ artifactory_url }}/{{ artifactory_repo }}/{{ duas_installer_archive }}"
+        dest: "{{ duas_installer_path }}/{{ duas_installer_archive }}"
+        url_username: "{{ artifactory_user }}"
+        url_password: "{{ artifactory_password }}"
+        force_basic_auth: yes
+        mode: "0644"
+        checksum: "md5:{{ duas_installer_checksum | default(omit) }}"
+      no_log: true
+      register: download_result
 
-- name: Find unirun installer
-  find:
-    paths: "{{ duas_installer_path }}"
-    patterns: "unirun"
-    recurse: yes
-  register: unirun_script
+    - name: Extract installer
+      unarchive:
+        src: "{{ duas_installer_path }}/{{ duas_installer_archive }}"
+        dest: "{{ duas_installer_path }}"
+        remote_src: yes
+        creates: "{{ duas_installer_path }}/unirun"
 
-- name: Create silent installation response file
-  template:
-    src: install.file.j2
-    dest: "{{ duas_installer_path }}/install.file"
-    mode: "0644"
+    - name: Find unirun installer
+      find:
+        paths: "{{ duas_installer_path }}"
+        patterns: "unirun"
+        recurse: yes
+      register: unirun_script
 
-- name: Run DUAS silent installation
-  shell: |
-    cd {{ unirun_script.files[0].path | dirname }}
-    ./unirun -i -s -f {{ duas_installer_path }}/install.file
-  args:
-    creates: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+    - name: Create silent installation response file
+      template:
+        src: install.file.j2
+        dest: "{{ duas_installer_path }}/install.file"
+        mode: "0644"
 
-- name: Set correct ownership
+    - name: Run DUAS silent installation
+      shell: |
+        cd {{ unirun_script.files[0].path | dirname }}
+        ./unirun -i -s -f {{ duas_installer_path }}/install.file
+      args:
+        creates: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+      register: installation_result
+
+    - name: Clean up installer files
+      file:
+        path: "{{ duas_installer_path }}"
+        state: absent
+      when: installation_result is changed
+
+- name: Ensure correct ownership on DUAS installation
   file:
     path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}"
     owner: "{{ duas_user }}"
     group: "{{ duas_group }}"
     recurse: yes
-
-- name: Clean up installer files
-  file:
-    path: "{{ duas_installer_path }}"
-    state: absent
+  when: duas_installed.stat.exists or installation_result is defined

@@ -2,6 +2,7 @@
 - name: Setup SSH key from Vault
   hosts: localhost
   gather_facts: no
+  tags: always
   tasks:
     - name: Fetch SSH private key from Vault
       set_fact:
@@ -15,8 +16,12 @@
         mode: "0600"
       no_log: true
 
-- name: Deploy Dollar Universe Application Server 6.10
+- name: Manage Dollar Universe Application Server 6.10
   hosts: duas_servers
   become: yes
   roles:
-    - duas_install
+    - role: duas_install
+      tags: [deploy, install]
+
+    - role: duas_rollback
+      tags: [rollback, uninstall]

@@ -108,20 +108,75 @@ duas_deploy/
     ├── ansible.cfg            # Ansible configuration
     ├── inventory.ini          # Target servers
     ├── playbooks/
-    │   └── duas.yml          # Main deployment playbook
+    │   └── duas.yml          # Main playbook (deploy/rollback via tags)
     └── roles/
-        └── duas_install/
-            ├── defaults/main.yml      # Variables
-            ├── tasks/
-            │   ├── main.yml          # Task orchestration
-            │   ├── prerequisites.yml  # System setup
-            │   ├── install.yml        # DUAS installation
-            │   └── configure.yml      # Post-install config
-            ├── handlers/main.yml      # Systemd handlers
+        ├── duas_install/
+        │   ├── defaults/main.yml      # Variables
+        │   ├── tasks/
+        │   │   ├── main.yml          # Task orchestration
+        │   │   ├── prerequisites.yml  # System setup
+        │   │   ├── install.yml        # DUAS installation
+        │   │   └── configure.yml      # Post-install config
+        │   ├── handlers/main.yml      # Systemd handlers
+        │   └── templates/
+        │       ├── install.file.j2    # Silent install response file
+        │       └── duas.service.j2    # Systemd service
+        └── duas_rollback/
+            ├── defaults/main.yml      # Rollback variables
+            └── tasks/
+                └── main.yml          # Rollback tasks
+```
+
+## Usage
+
+### Deploy DUAS
+
+In GitLab: **CI/CD → Pipelines** → Click play button on `deploy_duas` job
+
+Or manually:
+
+```bash
+cd ansible
+ansible-playbook -i inventory.ini playbooks/duas.yml --tags deploy
+```
+
+### Rollback/Uninstall DUAS
+
+In GitLab: **CI/CD → Pipelines** → Click play button on `rollback_duas` job
+
+Or manually:
+
+```bash
+cd ansible
+ansible-playbook -i inventory.ini playbooks/duas.yml --tags rollback
+```
+
+## Rollback Details
+
+The rollback will:
+
+- Stop and disable the DUAS service
+- Remove the systemd service file
+- Unregister from UVMS
+- Create a backup (optional, configurable)
+- Remove the DUAS installation directory
+- Remove the DUAS user and group (configurable)
+
+**Rollback Options** (in `ansible/roles/duas_rollback/defaults/main.yml`):
+
+```yaml
+rollback_remove_user: true # Remove DUAS user
+rollback_remove_group: true # Remove DUAS group
+rollback_remove_packages: false # Keep packages (may be used by other apps)
+rollback_backup_data: true # Create backup before deletion
+rollback_backup_dir: "/tmp/duas_backup_{{ ansible_date_time.epoch }}"
+```
+
             └── templates/
                 ├── install.file.j2    # Silent install response file
                 └── duas.service.j2    # Systemd service
-```
+
+````
 
 ## Service Management
 
@@ -140,7 +195,7 @@ source /var/opt/AUTOMIC/DUAS/MYCOMPANY_<hostname>/unienv.ksh
 unidlt start
 unidlt stop
 unidlt status
-```
+````
 
 ## Troubleshooting
 

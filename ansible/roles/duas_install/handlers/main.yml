@@ -3,3 +3,6 @@
 - name: Reload systemd
   systemd:
     daemon_reload: yes
+
+- name: Save iptables rules
+  shell: service iptables save
