@@ -3,12 +3,10 @@
   hosts: localhost
   gather_facts: no
   tags: always
+  vars:
+    vault_secret_path: "kv2-ilm-gold_saas/data/{{ env }}/credentials/ssh_keys"
+    ssh_private_key: "{{ lookup('community.hashi_vault.hashi_vault', 'secret={{ vault_secret_path }}:iaas_private_key') }}"
   tasks:
-    - name: Fetch SSH private key from Vault
-      set_fact:
-        ssh_private_key: "{{ lookup('community.hashi_vault.hashi_vault', 'secret=secret/data/ssh/duas:private_key token={{ vault_token }} url={{ vault_addr }}') }}"
-      no_log: true
-
     - name: Write SSH private key to file
       copy:
         content: "{{ ssh_private_key }}"
@@ -19,9 +17,11 @@
 - name: Manage Dollar Universe Application Server 6.10
   hosts: duas_servers
   become: yes
+  vars:
+    artifactory_user: "{{ lookup('community.hashi_vault.hashi_vault', 'secret={{ vault_secret_path }}:username') }}"
+    artifactory_password: "{{ lookup('community.hashi_vault.hashi_vault', 'secret={{ vault_secret_path }}:password') }}"
+    uvms_admin_user: "{{ lookup('community.hashi_vault.hashi_vault', 'secret={{ vault_gold_saas_secret_path }}:username') }}"
+    uvms_admin_password: "{{ lookup('community.hashi_vault.hashi_vault', 'secret={{ vault_gold_saas_secret_path }}:password') }}"
   roles:
-    - role: duas_install
-      tags: [deploy, install]
-
-    - role: duas_rollback
-      tags: [rollback, uninstall]
+    - { role: roles/duas_install, tags: [deploy] }
+    - { role: roles/duas_rollback, tags: [rollback] }

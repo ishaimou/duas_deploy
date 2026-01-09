@@ -1,58 +1,71 @@
 ---
-stages:
-  - deploy
-  - rollback
+default:
+  tags:
+    - cd-gcp-vpodg1np
+  image: carrefour-public-docker-virtual.enterpriserepo.fr.carrefour.com/osfactory/ansible:9
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+      - api_failure
+  timeout: 1h
 
 variables:
-  ANSIBLE_HOST_KEY_CHECKING: "False"
-  VAULT_ADDR: "https://vault.example.com"
+  ANSIBLE_PARAMS: "-v"
+  VAULT_LDAP_USERNAME: "fr_srv_ilm_ap2r_dev_vault"
+  OPERATION:
+    value: "deploy"
+    options:
+      - "deploy"
+      - "rollback"
+    description: "Operation à effectuer"
+  ENV:
+    value: "recette"
+    options:
+      - "dev"
+      - "recette"
+      - "preprod"
+      - "prod"
+    description: "Environnement cible de l'opération"
 
-deploy_duas:
-  stage: deploy
-  image: williamyeh/ansible:alpine3
+stages:
+  - ansible
+
+.ansible_template:
+  stage: ansible
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: https://gitlab.com
+  secrets:
+    # Define required variable for authentication
+    DOCKER_AUTH_CONFIG:
+      # Syntax : secret_name/secret_field@kv_name
+      vault: ""
+      file: false
+    VAULT_LDAP_PASSWORD:
+      vault: ""
+      file: false
   before_script:
-    - apk add --no-cache openssh-client python3 py3-pip
-    - pip3 install ansible hvac
-    - ansible-galaxy collection install community.hashi_vault
+    # Get Temporary Vault token using LDAP auth
+    - >
+      export VAULT_TOKEN=$(vault login 
+      -method=ldap -address https://vault.agilefabric.fr.carrefour.com 
+      -tls-skip-verify username=$VAULT_LDAP_USERNAME password=$VAULT_LDAP_PASSWORD -format=json | 
+      jq -r '.auth.client_token')
 
-    # Setup SSH (key will be fetched by Ansible from Vault)
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan -H ${TARGET_HOST} >> ~/.ssh/known_hosts 2>/dev/null || true
+duas:
+  extends: .ansible_template
   script:
-    - cd ansible
+    - export ANSIBLE_HASHI_VAULT_TOKEN=$VAULT_TOKEN
+    - export ANSIBLE_CONFIG=${CI_PROJECT_DIR}/ansible/ansible.cfg
     - |
-      ansible-playbook -i inventory.ini \
+      cd ansible && \
+      ansible-playbook -i inventory/$ENV/hosts.yml \
         playbooks/duas.yml \
-        --tags deploy \
-        -e "vault_addr=${VAULT_ADDR}" \
-        -e "vault_token=${CI_JOB_JWT}" \
-        -v
-  only:
-    - main
-  when: manual
-
-rollback_duas:
-  stage: rollback
-  image: williamyeh/ansible:alpine3
-  before_script:
-    - apk add --no-cache openssh-client python3 py3-pip
-    - pip3 install ansible hvac
-    - ansible-galaxy collection install community.hashi_vault
-
-    # Setup SSH (key will be fetched by Ansible from Vault)
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan -H ${TARGET_HOST} >> ~/.ssh/known_hosts 2>/dev/null || true
-  script:
-    - cd ansible
-    - |
-      ansible-playbook -i inventory.ini \
-        playbooks/duas.yml \
-        --tags rollback \
-        -e "vault_addr=${VAULT_ADDR}" \
-        -e "vault_token=${CI_JOB_JWT}" \
-        -v
+        -e "env=$ENV" \
+        --tags $OPERATION \
+        $ANSIBLE_PARAMS
   only:
     - main
   when: manual

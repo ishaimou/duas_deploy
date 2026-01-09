@@ -4,20 +4,6 @@
     name: "{{ required_packages }}"
     state: present
 
-- name: Create DUAS group
-  group:
-    name: "{{ duas_group }}"
-    state: present
-
-- name: Create DUAS user
-  user:
-    name: "{{ duas_user }}"
-    group: "{{ duas_group }}"
-    shell: /bin/ksh
-    home: "/home/{{ duas_user }}"
-    create_home: yes
-    state: present
-
 - name: Create installation directory
   file:
     path: "{{ duas_install_dir }}"

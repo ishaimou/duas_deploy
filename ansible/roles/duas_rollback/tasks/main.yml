@@ -37,17 +37,18 @@
     - name: Unregister DUAS from UVMS
       shell: |
         source {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/unienv.ksh
-        {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unisetup -unregister \
+        {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unims -unregister \
           -uvms {{ uvms_hostname }} \
           -port {{ uvms_port }} \
-          -company {{ duas_company }} \
-          -node {{ duas_node }}
+          -login "{{ uvms_admin_user }}" \
+          -pwd "{{ uvms_admin_password }}"
       args:
         executable: /bin/ksh
       become_user: "{{ duas_user }}"
       ignore_errors: yes
       register: unregister_result
       changed_when: unregister_result.rc == 0
+      no_log: true
 
     - name: Create backup of DUAS installation
       archive:
@@ -95,7 +96,6 @@
   yum:
     name:
       - ksh
-      - glibc.i686
       - libnsl
     state: absent
   when: rollback_remove_packages | bool

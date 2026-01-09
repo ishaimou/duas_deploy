@@ -1,0 +1,5 @@
+---
+uvms_hostname: "10.25.6.219"
+uvms_port: "10884"
+duas_node: "GOLD-OCI-IAAS-REC"
+duas_company: "CSIFRC"

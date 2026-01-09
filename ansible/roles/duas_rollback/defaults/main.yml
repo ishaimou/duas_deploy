@@ -2,19 +2,13 @@
 # DUAS Rollback Variables
 # These should match the installation variables
 
-duas_company: "MYCOMPANY"
-duas_node: "NODE01"
 duas_install_dir: "/var/opt/AUTOMIC/DUAS"
-duas_user: "duas"
-duas_group: "duas"
-
-# UVMS Registration
-uvms_hostname: "uvms-server.example.com"
-uvms_port: "4184"
+duas_user: "c4f-admin"
+duas_group: "c4f-admin"
 
 # Rollback Options
-rollback_remove_user: true # Remove DUAS user
-rollback_remove_group: true # Remove DUAS group
+rollback_remove_user: false # Remove DUAS user
+rollback_remove_group: false # Remove DUAS group
 rollback_remove_packages: false # Keep packages (may be used by other apps)
 rollback_backup_data: true # Create backup before deletion
 rollback_backup_dir: "/tmp/duas_backup_{{ ansible_date_time.epoch }}"

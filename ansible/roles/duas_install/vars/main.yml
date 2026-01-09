@@ -1,0 +1,4 @@
+vault_namespace: "kv2-ilm-gold_saas"
+vault_path: "credentials"
+vault_gold_saas_secret_path: "{{ vault_namespace }}/data/{{ env }}/{{ vault_path }}"
+vault_secret_path: "{{ vault_namespace }}/data/{{ env }}/duas"

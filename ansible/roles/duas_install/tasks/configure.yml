@@ -17,18 +17,18 @@
 - name: Register DUAS with UVMS
   shell: |
     source {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/unienv.ksh
-    {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unisetup -register \
+    {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unims -register \
       -uvms {{ uvms_hostname }} \
       -port {{ uvms_port }} \
-      -company {{ duas_company }} \
-      -node {{ duas_node }}
+      -login "{{ uvms_admin_user }}" \
+      -pwd "{{ uvms_admin_password }}"
   args:
     executable: /bin/ksh
   become_user: "{{ duas_user }}"
   when: not uvms_marker.stat.exists
   register: uvms_registration
   changed_when: uvms_registration.rc == 0
-  failed_when: false
+  no_log: true
 
 - name: Create UVMS registration marker
   file:
