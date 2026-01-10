@@ -4,13 +4,13 @@
 # BINSHARING : Binary sharing between instances
  BINSHARING n
 # UVMSNOW : Register to UVMS now
- UVMSNOW y
+ UVMSNOW n
 # CENTRALHOST : UVMS hostname
  CENTRALHOST {{ uvms_hostname }}
 # CENTRALPORT : UVMS port
  CENTRALPORT {{ uvms_port }}
 # CENTRALLOGIN : UVMS admin login
- CENTRALLOGIN admin
+ CENTRALLOGIN
 # CENTRALPASSWD : UVMS admin password (leave blank for manual registration)
  CENTRALPASSWD
 # COMPANY : Company name
@@ -22,7 +22,7 @@
 # NODEHOST : Node hostname
  NODEHOST {{ ansible_hostname }}
 # INSTALLDIR : Installation directory
- INSTALLDIR {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}
+ INSTALLDIR {{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}
 # AREA_A : Configure Application area
  AREA_A {% if duas_area == 'APP' %}y{% else %}n{% endif %}
 # AREA_I : Configure Integration area
@@ -40,11 +40,11 @@
 # INSTALL_JAVA : Manager for Java
  INSTALL_JAVA k
 # JAVA_PATH : Java path
- JAVA_PATH
+ JAVA_PATH /usr/lib/jvm/jre-1.8.0-openjdk
 # PORTDEF : Use default ports
- PORTDEF y
+ PORTDEF n
 # PORT : TCP port base number
- PORT 4100
+ PORT 10800
 # ADMUSER : Administrator user
  ADMUSER {{ duas_user }}
 # EXECPATH : Binaries directory path

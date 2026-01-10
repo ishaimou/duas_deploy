@@ -1,23 +1,23 @@
 ---
 - name: Check if DUAS installation exists
   stat:
-    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}/bin/unidlt"
   register: duas_binary
 
 - name: Fail if DUAS is not installed
   fail:
-    msg: "DUAS installation not found at {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+    msg: "DUAS installation not found at {{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}/bin/unidlt"
   when: not duas_binary.stat.exists
 
 - name: Check if UVMS registration marker exists
   stat:
-    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/data/uvms_registered"
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}/data/uvms_registered"
   register: uvms_marker
 
 - name: Register DUAS with UVMS
   shell: |
-    source {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/unienv.ksh
-    {{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unims -register \
+    source {{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}/unienv.ksh
+    {{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}/bin/unims -register \
       -uvms {{ uvms_hostname }} \
       -port {{ uvms_port }} \
       -login "{{ uvms_admin_user }}" \
@@ -32,7 +32,7 @@
 
 - name: Create UVMS registration marker
   file:
-    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/data/uvms_registered"
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}/data/uvms_registered"
     state: touch
     owner: "{{ duas_user }}"
     group: "{{ duas_group }}"

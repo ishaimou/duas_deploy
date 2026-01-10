@@ -3,14 +3,14 @@
 duas_version: "6.10.121"
 duas_installer_archive: "Dollar.Universe_Application.Server_linux.64_6_10_121+build.0031.tar.gz"
 duas_installer_path: "/tmp/duas_installer"
+duas_installer_checksum: a6790df55d0c938854f53809cf3ce987
 
 # Artifactory Details (credentials passed from GitLab CI via Vault)
 artifactory_url: "https://enterpriserepo.fr.carrefour.com/artifactory"
 artifactory_repo: "gold-generic-virtual/FR_CSI_DOLLAR_UNIVERSE/binaries/6.10.121"
-
 # DUAS Installation Details (per official docs)
 duas_area: "APP"
-duas_install_dir: "/var/opt/AUTOMIC/DUAS" # Official default path
+duas_install_dir: "/universe" # Official default path
 duas_user: "c4f-admin"
 duas_group: "c4f-admin"
 
@@ -19,3 +19,11 @@ required_packages:
   - ksh
   - libnsl
   - java-1.8.0-openjdk
+
+uvms_ports:
+  - 10800
+  - 10805
+  - 10811
+  - 10815
+  - 10804
+  - 10818

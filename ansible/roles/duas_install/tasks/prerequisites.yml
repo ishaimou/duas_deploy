@@ -27,11 +27,6 @@
     action: insert
     rule_num: 1
     comment: "Dollar Universe UVMS communication"
-  loop:
-    - 10800
-    - 10805
-    - 10811
-    - 10815
-    - 10804
-    - 10818
+  loop: "{{ uvms_ports }}"
+  loop_control: "item"
   notify: Save iptables rules

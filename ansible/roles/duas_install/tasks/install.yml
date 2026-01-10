@@ -1,7 +1,7 @@
 ---
 - name: Check if DUAS is already installed
   stat:
-    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}/bin/unidlt"
   register: duas_installed
 
 - name: DUAS installation tasks
@@ -50,7 +50,7 @@
         cd {{ unirun_script.files[0].path | dirname }}
         ./unirun -s -f {{ duas_installer_path }}/install.file
       args:
-        creates: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}/bin/unidlt"
+        creates: "{{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}/bin/unidlt"
       register: installation_result
 
     - name: Clean up installer files
@@ -61,8 +61,24 @@
 
 - name: Ensure correct ownership on DUAS installation
   file:
-    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ ansible_hostname }}"
+    path: "{{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}"
     owner: "{{ duas_user }}"
     group: "{{ duas_group }}"
     recurse: yes
   when: duas_installed.stat.exists or installation_result is defined
+
+- name: Create Node directory for generic scripts compatibility
+  file:
+    path: "{{ duas_install_dir }}/{{ duas_node }}"
+    state: directory
+    owner: "{{ duas_user }}"
+    group: "{{ duas_group }}"
+    mode: "0755"
+
+- name: Create Company symlink for generic scripts compatibility
+  file:
+    src: "{{ duas_install_dir }}/{{ duas_company }}_{{ duas_node }}"
+    dest: "{{ duas_install_dir }}/{{ duas_node }}/{{ duas_company }}"
+    state: link
+    owner: "{{ duas_user }}"
+    group: "{{ duas_group }}"
